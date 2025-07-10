@@ -6,7 +6,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 function getPageData() {
-  const contactKeywords = ["contact us", "contact", "about", "about us"];
+  const contactKeywords = ["contact us", "contact", "about", "about us", "communication", "team"];
   const links = Array.from(document.links);
   const emails = new Set();
   const potentialLinks = new Set();
