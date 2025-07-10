@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Email Crawler</title>
+    <style>
+      body {
+        width: 300px;
+        font-family: sans-serif;
+      }
+      #emailList {
+        list-style: none;
+        padding: 0;
+      }
+      #emailList li {
+        padding: 5px;
+        border-bottom: 1px solid #eee;
+      }
+      #links {
+        margin-top: 10px;
+      }
+      .link-item {
+        margin-bottom: 5px;
+        display: block;
+      }
+      #clear-cache {
+        margin-top: 15px;
+      }
+      #status {
+        color: green;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Email Crawler</h1>
+    <div id="links"></div>
+    <button id="clear-cache">清空缓存</button>
+    <button id="reset-crawling">重置状态</button>
+    <div id="status"></div>
+    <button id="crawlButton">Crawl Emails</button>
+    <ul id="emailList"></ul>
+    <script src="popup.js" type="module"></script>
+  </body>
+</html>
