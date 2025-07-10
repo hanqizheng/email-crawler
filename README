@@ -1,0 +1,13 @@
+# Email Crawler
+
+## Features
+
+- Extract emails from the current page
+- Extract potential links from the current page
+- Crawl potential links
+- Store the results in the browser's storage
+
+
+## LICENSE
+
+MIT
