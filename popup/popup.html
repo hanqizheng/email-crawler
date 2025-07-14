@@ -5,30 +5,94 @@
     <title>Email Crawler</title>
     <style>
       body {
-        width: 300px;
-        font-family: sans-serif;
+        width: 320px;
+        font-family: "Segoe UI", "Arial", sans-serif;
+        background: linear-gradient(135deg, #f7f9fc 60%, #ebefff 100%);
+        border-radius: 8px;
+        margin: 0;
+        padding: 0 0 16px 0;
+      }
+      h1 {
+        color: #334eff;
+        font-size: 1.3rem;
+        margin: 18px 0 10px 0;
+        text-align: center;
+        letter-spacing: 1px;
       }
       #emailList {
         list-style: none;
         padding: 0;
+        margin: 0 12px;
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(51, 78, 255, 0.04);
       }
       #emailList li {
-        padding: 5px;
-        border-bottom: 1px solid #eee;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        border-bottom: 1px solid #ebefff;
+        border-radius: 8px;
+        margin-bottom: 6px;
+        background: #f7f9fc;
+        box-shadow: 0 1px 2px rgba(51, 78, 255, 0.03);
+      }
+      #emailList li:last-child {
+        border-bottom: none;
+      }
+      .email-user {
+        font-weight: 500;
+        color: #334eff;
+        margin-right: 8px;
+      }
+      .email-link {
+        color: #222;
+        text-decoration: underline;
+        font-size: 0.98em;
+        word-break: break-all;
       }
       #links {
-        margin-top: 10px;
+        margin: 12px 12px 0 12px;
+        background: #fff;
+        border-radius: 8px;
+        padding: 8px 10px;
+        box-shadow: 0 1px 4px rgba(51, 78, 255, 0.04);
       }
       .link-item {
         margin-bottom: 5px;
         display: block;
+        color: #334eff;
+        border-radius: 8px;
+        padding: 2px 6px;
+        text-decoration: underline;
+        font-size: 0.97em;
       }
-      #clear-cache {
-        margin-top: 15px;
+      #clear-cache,
+      #reset-crawling,
+      #crawlButton,
+      #export-csv {
+        background: #334eff;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 7px 14px;
+        margin: 8px 6px 0 0;
+        font-size: 1em;
+        cursor: pointer;
+        transition: background 0.2s;
+        box-shadow: 0 1px 4px rgba(51, 78, 255, 0.07);
+      }
+      #clear-cache:hover,
+      #reset-crawling:hover,
+      #crawlButton:hover,
+      #export-csv:hover {
+        background: #2233aa;
       }
       #status {
-        color: green;
-        margin-top: 10px;
+        color: #1bbf4c;
+        margin: 10px 0 0 12px;
+        font-size: 0.98em;
       }
     </style>
   </head>
@@ -39,6 +103,7 @@
     <button id="reset-crawling">重置状态</button>
     <div id="status"></div>
     <button id="crawlButton">Crawl Emails</button>
+    <button id="export-csv">导出 CSV</button>
     <ul id="emailList"></ul>
     <script src="popup.js" type="module"></script>
   </body>

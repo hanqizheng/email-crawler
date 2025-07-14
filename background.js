@@ -1,103 +1,75 @@
-import { extractEmails } from "./core/emailExtractor.js";
+import { extractEmailsFromHtml } from "./core/emailExtractor.js";
+
+const CACHE_EXPIRE_MS = 24 * 60 * 60 * 1000; // 24小时
+
+// 获取缓存（带过期判断）
+async function getCachedEmails(url) {
+  return new Promise((resolve) => {
+    chrome.storage.local.get([url], (result) => {
+      const entry = result[url];
+      if (entry && entry.ts && Date.now() - entry.ts < CACHE_EXPIRE_MS) {
+        resolve(entry.emails || []);
+      } else {
+        resolve(null);
+      }
+    });
+  });
+}
+
+// 设置缓存
+function setCachedEmails(url, emails) {
+  chrome.storage.local.set({
+    [url]: { emails, ts: Date.now() },
+  });
+}
+
+// 后台 fetch 页面内容
+async function fetchPageHtml(url) {
+  try {
+    const resp = await fetch(url, { credentials: "omit" });
+    if (!resp.ok) throw new Error("Network error");
+    return await resp.text();
+  } catch (e) {
+    return null;
+  }
+}
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "crawl") {
-    const tabId = request.tabId;
-    const url = request.url;
-    const domain = new URL(url).hostname;
-    const allEmails = new Set();
-    const allPotentialLinks = new Set();
-    let pending = 0;
-
-    // 初始化状态
-    chrome.storage.local.set({
-      ["crawling_" + tabId]: true,
-      ["emails_" + domain]: [],
-      ["potentialLinks_" + domain]: [],
-    });
-
-    // 1. 处理当前页面
-    chrome.scripting
-      .executeScript({
-        target: { tabId: tabId },
-        files: ["scripts/content.js"],
-      })
-      .then(() => {
-        chrome.tabs.sendMessage(
-          tabId,
-          { action: "getPageData" },
-          (response) => {
-            if (response) {
-              (response.emails || []).forEach((email) => allEmails.add(email));
-              (response.links || []).forEach((link) =>
-                allPotentialLinks.add(link)
-              );
-              chrome.storage.local.set({
-                ["emails_" + domain]: Array.from(allEmails),
-                ["potentialLinks_" + domain]: Array.from(allPotentialLinks),
-              });
-
-              // 2. 仅访问每个潜在链接页面一次并提取邮箱
-              const links = Array.from(allPotentialLinks);
-              pending = links.length;
-              if (pending === 0) finish();
-              links.forEach((link) => {
-                chrome.tabs.create({ url: link, active: false }, (newTab) => {
-                  chrome.tabs.onUpdated.addListener(function listener(
-                    tabId_,
-                    info
-                  ) {
-                    if (tabId_ === newTab.id && info.status === "complete") {
-                      chrome.scripting
-                        .executeScript({
-                          target: { tabId: newTab.id },
-                          files: ["scripts/content.js"],
-                        })
-                        .then(() => {
-                          chrome.tabs.sendMessage(
-                            newTab.id,
-                            { action: "getPageData" },
-                            (resp) => {
-                              if (resp && resp.emails) {
-                                resp.emails.forEach((email) =>
-                                  allEmails.add(email)
-                                );
-                                chrome.storage.local.set({
-                                  ["emails_" + domain]: Array.from(allEmails),
-                                });
-                              }
-                              chrome.tabs.remove(newTab.id, () => {
-                                pending--;
-                                if (pending === 0) finish();
-                              });
-                            }
-                          );
-                        })
-                        .catch(() => {
-                          chrome.tabs.remove(newTab.id, () => {
-                            pending--;
-                            if (pending === 0) finish();
-                          });
-                        });
-                      chrome.tabs.onUpdated.removeListener(listener);
-                    }
-                  });
-                });
-              });
-            } else {
-              finish();
-            }
+  if (request.action === "crawlEmails") {
+    // request: { action, url, html, links, forceRefresh }
+    (async () => {
+      const { url, html, links, forceRefresh } = request;
+      const allEmails = new Set();
+      // 1. 当前页面邮箱
+      extractEmailsFromHtml(html).forEach((e) => allEmails.add(e));
+      // 2. 相关链接邮箱
+      const linkResults = await Promise.all(
+        (links || []).map(async (link) => {
+          if (!forceRefresh) {
+            const cached = await getCachedEmails(link);
+            if (cached) return cached;
           }
-        );
-      });
-
-    function finish() {
-      chrome.storage.local.set({ ["crawling_" + tabId]: false });
-      chrome.runtime.sendMessage({
-        action: "displayResults",
-        emails: Array.from(allEmails),
-        domain: domain,
-      });
-    }
+          const pageHtml = await fetchPageHtml(link);
+          if (pageHtml) {
+            const emails = extractEmailsFromHtml(pageHtml);
+            setCachedEmails(link, emails);
+            return emails;
+          } else {
+            return [];
+          }
+        })
+      );
+      linkResults.flat().forEach((e) => allEmails.add(e));
+      sendResponse({ emails: Array.from(allEmails) });
+    })();
+    // 异步响应
+    return true;
+  }
+  if (request.action === "clearEmailCache") {
+    // 清除所有缓存
+    chrome.storage.local.clear(() => {
+      sendResponse({ ok: true });
+    });
+    return true;
   }
 });
